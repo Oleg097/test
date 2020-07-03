@@ -1,0 +1,63 @@
+plugins {
+	id 'org.springframework.boot' version '2.3.1.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+	id 'java'
+	id 'war'
+}
+
+group = 'com.mg'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+configurations {
+	jaxb
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation('org.springframework.boot:spring-boot-starter-web-services') {
+		//exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+	}
+	compile group: 'org.springframework.ws', name: 'spring-ws-core', version: '2.2.0.RELEASE'
+	compile group: 'org.springframework.ws', name: 'spring-ws-security', version: '3.0.9.RELEASE'
+	compile group: 'org.springframework.ws', name: 'spring-ws-support', version: '2.2.0.RELEASE'
+	jaxb(
+			'com.sun.xml.bind:jaxb-core:2.3.0.1',
+			'com.sun.xml.bind:jaxb-xjc:2.3.2',
+			'com.sun.xml.bind:jaxb-impl:2.3.2'
+	)
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+}
+
+
+task generateJavaClasses {
+    System.setProperty('javax.xml.accessExternalSchema', 'all')
+    def jaxbTargetDir = file("src/main/java/")
+    doLast {
+        jaxbTargetDir.mkdirs()
+        ant.taskdef(
+                name: 'xjc',
+                classname: 'com.sun.tools.xjc.XJCTask',
+                classpath: configurations.jaxb.asPath
+        )
+        ant.jaxbTargetDir = jaxbTargetDir
+        ant.xjc(
+                destdir: '${jaxbTargetDir}',
+                package: 'com.mg.mgclient',
+                schema: 'src/main/resources/schema.wsdl',
+                language: 'WSDL'
+        )
+    }
+}
+
+bootJar {
+	baseName = 'clientmg'
+	version =  '0.0.1'
+}
+
+
